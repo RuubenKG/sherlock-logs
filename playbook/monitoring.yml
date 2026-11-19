@@ -1,0 +1,19 @@
+- name: Deploy monitoring agents to every VM
+  hosts: all
+  become: true
+  roles:
+    - role: ../roles/node_exporter
+    - role: ../roles/cadvisor
+    - role: ../roles/monitoring_firewall
+    - role: ../roles/filebeat
+
+- name: Deploy Prometheus stack on the monitoring VM
+  hosts: monitoring
+  become: true
+  roles:
+    - role: ../roles/prometheus
+    - role: ../roles/alertmanager
+    - role: ../roles/grafana
+    - role: ../roles/elasticsearch
+    - role: ../roles/kibana
+    - role: ../roles/logstash

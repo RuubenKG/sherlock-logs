@@ -1,0 +1,78 @@
+---
+- name: Install required packes for Docker
+  apt:
+    name:
+    - apt-transport-https
+    - ca-certificates
+    - curl
+    - gnupg
+    - lsb-release
+    state: present
+    update_cache: yes
+
+- name: Add Docker GPG key
+  apt_key:
+    url: https://download.docker.com/linux/ubuntu/gpg
+    state: present
+
+- name: Add Docker repository
+  apt_repository:
+    repo: "deb [arch=amd64] https://download.docker.com/linux/ubuntu {{ ansible_distribution_release }} stable"        
+    state: present
+
+- name: Install Docker
+  apt:
+    name:
+    - docker-ce
+    - docker-ce-cli
+    - containerd.io
+    state: present
+    update_cache: yes
+
+- name: Configure Docker log rotation (prevent unbounded container logs)
+  copy:
+    dest: /etc/docker/daemon.json
+    content: |
+      {
+        "log-driver": "json-file",
+        "log-opts": {
+          "max-size": "50m",
+          "max-file": "3"
+        },
+        "features": {
+          "containerd-snapshotter": false
+        }
+      }
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart Docker
+
+- name: Add devops user to docker group
+  user:
+    name: devops
+    groups: docker
+    append: yes
+
+- name: Start and enable Docker
+  service:
+    name: docker
+    state: started
+    enabled: yes
+
+- name: Wait for Docker to be ready
+  shell: docker info
+  register: docker_info
+  retries: 5
+  delay: 10
+  until: docker_info.rc == 0
+
+- name: Install pip
+  apt:
+    name: python3-pip
+    state: present
+
+- name: Install Docker SDK for Python (required by community.docker)
+  pip:
+    name: docker
+    state: present

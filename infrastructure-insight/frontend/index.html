@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Infrastructure</title>
+        <link rel="stylesheet" href="style.css">
+    </head>
+<body>
+    <h1>PERFORMANCE</h1>
+    <div class="webserver-tag" id="webserver-tag">Loading...</div>
+    <div class="grid" id="metrics-grid">
+      <div class="card">
+                        <h2>System</h2>
+                        <div class="metric">
+                            <span class="label">Hostname</span>
+                            <span class="value" id="val-hostname">-</span>
+                        </div>
+                        <div class="metric">
+                            <span class="label">OS Type</span>
+                            <span class="value" id="val-os-type">-</span>
+                        </div>
+                        <div class="metric">
+                            <span class="label">OS Release</span>
+                            <span class="value" id="val-os-release">-</span>
+                        </div>
+                        <div class="metric">
+                            <span class="label">OS Version</span>
+                            <span class="value" id="val-os-version">-</span>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h2>CPU</h2>
+                        <div class="metric">
+                            <span class="label">Cores</span>
+                            <span class="value" id="val-cpu-cores">-</span>
+                        </div>
+                        <div class="metric">
+                            <span class="label">Threads</span>
+                            <span class="value" id="val-cpu-threads">-</span>
+                        </div>
+                        <div class="metric">
+                            <span class="label">Frequency</span>
+                            <span class="value" id="val-cpu-freq">-</span>
+                        </div>
+                        <div class="metric">
+                            <span class="label">Usage</span>
+                            <span class="value" id="val-cpu-usage">-</span>
+                        </div>
+                    </div>
+                    <div class="card">
+                        <h2>Memory</h2>
+                        <div class="metric">
+                            <span class="label">Total</span>
+                            <span class="value" id="val-memory-total">-</span>
+                        </div>
+                        <div class="metric">
+                            <span class="label">Used</span>
+                            <span class="value" id="val-memory-used">-</span>
+                        </div>
+                        <div class="metric">
+                            <span class="label">Free</span>
+                            <span class="value" id="val-memory-free">-</span>
+                        </div>
+                        <div class="metric">
+                            <span class="label">Usage</span>
+                            <span class="value" id="val-memory-usage">-</span>
+                        </div>
+                    </div>
+                </div>
+    <div id="error-banner" class="error" style="display:none;">
+    <p>Failed to fetch metrics.</p>
+                    </div>
+                    <script src="app.js"></script>
+            </body>
+</html>

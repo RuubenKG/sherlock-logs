@@ -1,0 +1,6 @@
+---
+- name: Allow port 3000 for backend API
+  ufw:
+    rule: allow
+    port: '3000'
+    proto: tcp

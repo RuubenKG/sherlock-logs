@@ -1,0 +1,28 @@
+---
+- name: Allow Node Exporter scraping from monitoring VM only
+  ufw:
+    rule: allow
+    from_ip: 192.168.56.16
+    port: '9100'
+    proto: tcp
+
+- name: Allow cAdvisor scraping from monitoring VM only
+  ufw:
+    rule: allow
+    from_ip: 192.168.56.16
+    port: '8081'
+    proto: tcp
+
+- name: Allow Node Exporter scraping from Docker bridge
+  ufw:
+    rule: allow
+    from_ip: 172.16.0.0/12
+    port: '9100'
+    proto: tcp
+
+- name: Allow cAdvisor scraping from Docker bridge
+  ufw:
+    rule: allow
+    from_ip: 172.16.0.0/12
+    port: '8081'
+    proto: tcp

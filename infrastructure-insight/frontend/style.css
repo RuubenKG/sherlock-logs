@@ -1,0 +1,72 @@
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+@font-face {
+    font-family: 'DOOMfont';
+    src: url('DooM.ttf');
+}
+
+body {
+    font-family: 'DOOMfont', sans-serif;
+    background-image: url('intermission.png');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-attachment: fixed;
+    color: #e0e0e0;
+    min-height: 100vh;
+    padding: 2rem;
+    -webkit-font-smoothing: none;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+h1 {
+    font-size: 2.5rem;
+    text-align: center;
+    color: #ffffff;
+    margin-bottom: 0.5rem;
+}
+
+.webserver-tag {
+    text-align: center;
+    color: #ff0000;
+    margin-bottom: 2rem;
+    font-size: 2.5rem;
+}
+
+.grid {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 1.5rem;
+    width: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.card h2 {
+    font-size: 1rem;
+    color: #ffffff;
+    margin-bottom: 1rem;
+}
+
+.metric {
+    font-size: 1.5rem;
+    padding: 0.7rem 0;
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+}
+
+h1, .card h2, .metric, .webserver-tag {
+    text-shadow: 3px 3px 0px #000000, -1px -1px 0px #000000;
+}
+
+.metric .label { color: #ff0000; }
+.metric .value {
+    color: #ffffff;
+    white-space: nowrap;
+}
+
+.loading { text-align: center; color: #ff0000; margin-top: 4rem; font-size: 2rem; }
+.error { text-align: center; color: #ffffff; margin-top: 4rem; font-size: 2rem; }

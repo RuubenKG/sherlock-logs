@@ -1,0 +1,28 @@
+vagrant status
+curl -s http://192.168.56.16:9090/api/v1/targets | grep -o '"health":"[^"]*"' | sort | uniq -c
+curl -s -o /dev/null -w "%{http_code}\n" http://192.168.56.13
+curl -s -o /dev/null -w "%{http_code}\n" http://192.168.56.10:3000/boom
+
+# CD Advisor sucks - proof
+
+docker logs cadvisor 2>&1 | grep 'read-write layer' | head -3
+curl -s -G http://192.168.56.16:9090/api/v1/query \
+  --data-urlencode 'query=container_start_time_seconds{name!=""}'
+
+
+# CPU
+stress-ng --cpu 8 --timeout 420s
+
+# Memory
+stress-ng --vm 2 --vm-bytes 90% --timeout 420s
+
+# Disk — needs ~30G on a 39G disk to cross 20%
+fallocate -l 30G /tmp/large_file.img
+
+# VM unreachable
+docker stop node_exporter
+
+# Elasticsearch
+docker stop elasticsearch2
+
+Logstash log alert	—	curl http://192.168.56.10:3000/boom

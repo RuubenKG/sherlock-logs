@@ -1,0 +1,31 @@
+---
+- name: Create Filebeat config directory
+  file:
+    path: /opt/monitoring/filebeat
+    state: directory
+    owner: root
+    group: root
+    mode: '0755'
+
+- name: Template Filebeat config
+  template:
+    src: filebeat.yml.j2
+    dest: /opt/monitoring/filebeat/filebeat.yml
+    owner: root
+    group: root
+    mode: '0644'
+  notify: Restart Filebeat
+
+- name: Run Filebeat container
+  community.docker.docker_container:
+    name: filebeat
+    image: docker.elastic.co/beats/filebeat:8.14.1
+    state: started
+    restart_policy: unless-stopped
+    user: root
+    command: ["filebeat", "-e", "-strict.perms=false"]
+    volumes:
+      - /opt/monitoring/filebeat/filebeat.yml:/usr/share/filebeat/filebeat.yml:ro
+      - /var/log:/var/log:ro
+      - /var/lib/docker/containers:/var/lib/docker/containers:ro
+      - /var/run/docker.sock:/var/run/docker.sock:ro

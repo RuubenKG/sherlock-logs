@@ -1,0 +1,32 @@
+---
+- name: Create frontend directory
+  file:
+    path: /home/devops/frontend
+    state: directory
+    owner: devops
+    group: devops
+
+- name: Copy frontend files
+  copy:
+    src: "{{ playbook_dir }}/../infrastructure-insight/frontend/"
+    dest: /home/devops/frontend/
+    owner: devops
+    group: devops
+
+- name: Build frontend Docker image
+  community.docker.docker_image:
+    name: frontend
+    source: build
+    build:
+      path: /home/devops/frontend
+      nocache: yes
+
+- name: Run frontend container
+  community.docker.docker_container:
+    name: frontend
+    image: frontend
+    state: started
+    recreate: yes 
+    restart_policy: always
+    ports:
+      - "80:80"

@@ -1,0 +1,54 @@
+---
+- name: Create Alertmanager config directory
+  file:
+    path: /opt/monitoring/alertmanager
+    state: directory
+    owner: devops
+    group: devops
+    mode: '0755'
+
+- name: Template Alertmanager configuration
+  template:
+    src: alertmanager.yml.j2
+    dest: /opt/monitoring/alertmanager/alertmanager.yml
+    owner: devops
+    group: devops
+    mode: '0644'
+  notify: Restart Alertmanager
+
+- name: Create Docker network for alerting
+  community.docker.docker_network:
+    name: alerting
+    state: present
+
+- name: Run Alertmanager container
+  community.docker.docker_container:
+    name: alertmanager
+    image: prom/alertmanager:v0.27.0
+    state: started
+    restart_policy: always
+    networks:
+      - name: alerting
+    ports:
+      - "9093:9093"
+    volumes:
+      - /opt/monitoring/alertmanager/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+    command:
+      - '--config.file=/etc/alertmanager/alertmanager.yml'
+
+- name: Run Alertmanager-Discord bridge container
+  community.docker.docker_container:
+    name: alertmanager-discord
+    image: benjojo/alertmanager-discord:latest
+    state: started
+    restart_policy: always
+    networks:
+      - name: alerting
+    env:
+      DISCORD_WEBHOOK: "{{ discord_webhook_url }}"
+
+- name: Allow Alertmanager UI port 9093
+  ufw:
+    rule: allow
+    port: '9093'
+    proto: tcp

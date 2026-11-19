@@ -1,0 +1,75 @@
+---
+- name: Remove old Jenkins repository if exists
+  file:
+    path: /etc/apt/sources.list.d/jenkins.list
+    state: absent
+
+- name: Install Java
+  apt:
+    name: openjdk-21-jdk
+    state: present
+    update_cache: yes
+
+- name: Add Jenkins GPG key from keyserver
+  shell: |
+    gpg --batch --keyserver keyserver.ubuntu.com --recv-keys 7198F4B714ABFC68
+    gpg --batch --export 7198F4B714ABFC68 | tee /usr/share/keyrings/jenkins-keyring.gpg > /dev/null
+  args:
+    creates: /usr/share/keyrings/jenkins-keyring.gpg
+
+- name: Add Jenkins repository
+  apt_repository:
+    repo: "deb [signed-by=/usr/share/keyrings/jenkins-keyring.gpg] https://pkg.jenkins.io/debian-stable binary/"
+    state: present
+    update_cache: yes
+
+- name: Install Jenkins
+  apt:
+    name: jenkins
+    state: present
+
+- name: Start and enable Jenkins
+  service:
+    name: jenkins
+    state: started
+    enabled: yes
+    
+- name: Create Jenkins .ssh directory
+  file:
+    path: /var/lib/jenkins/.ssh
+    state: directory
+    owner: jenkins
+    group: jenkins
+    mode: '0700'
+
+- name: Generate Jenkins SSH key
+  openssh_keypair:
+    path: /var/lib/jenkins/.ssh/id_ed25519
+    type: ed25519
+    owner: jenkins
+    group: jenkins
+    force: no
+
+- name: Allow port 8080 for Jenkins
+  ufw:
+    rule: allow
+    port: '8080'
+    proto: tcp
+
+- name: Seed known_hosts for deploy targets (reproducible SSH)
+  known_hosts:
+    path: /var/lib/jenkins/.ssh/known_hosts
+    name: "{{ item }}"
+    key: "{{ lookup('pipe', 'ssh-keyscan -t ed25519 ' + item) }}"
+    state: present
+  loop:
+    - 192.168.56.10
+    - 192.168.56.11
+    - 192.168.56.12
+
+- name: Ensure jenkins owns its known_hosts
+  file:
+    path: /var/lib/jenkins/.ssh/known_hosts
+    owner: jenkins
+    group: jenkins
+    mode: '0644'

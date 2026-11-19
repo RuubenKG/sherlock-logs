@@ -1,0 +1,32 @@
+---
+- name: Create backend directory
+  file:
+    path: /home/devops/backend
+    state: directory
+    owner: devops
+    group: devops
+
+- name: Copy backend files
+  copy:
+    src: "{{ playbook_dir }}/../infrastructure-insight/backend/"
+    dest: /home/devops/backend/
+    owner: devops
+    group: devops
+
+- name: Build backend Docker image
+  community.docker.docker_image:
+    name: backend
+    source: build
+    build:
+      path: /home/devops/backend
+      nocache: yes
+
+- name: Run backend container
+  community.docker.docker_container:
+    name: backend
+    image: backend
+    state: started
+    recreate: yes 
+    restart_policy: always
+    ports:
+      - "3000:3000"

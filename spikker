@@ -1,0 +1,16 @@
+# CI/CD deploy'b agente + dünaamiline konfiguratsioon
+
+Mida ma tegin: Jenkins pipeline'is on eraldi stage "Deploy Monitoring Agents", mis SSH-b .10, .11 ja .12 peale ning käivitab node_exporter'i ja cAdvisori uuesti.
+
+Dünaamilisus tuleb Ansible poolelt: prometheus.yml on Jinja template, mis loopib üle inventory:
+
+jinja
+{% for host in groups['all'] %}
+  - '{{ host }}:9100'
+{% endfor %}
+
+IP-sid pole kuskil hardcoded. Lisan uue VM-i inventory'sse → teda hakatakse automaatselt scrape'ima. Filebeati config on samuti hostipõhiselt templated.
+
+Päris mitme keskkonna puhul kasutaks sama mustrit group_vars'iga — staging ja production saaksid oma muutujafailid, kood jääks samaks.
+
+Näita: Jenkinsis build history — #1 "Started by user", #2/#4 "Started by an SCM change".

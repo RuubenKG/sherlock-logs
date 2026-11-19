@@ -1,0 +1,55 @@
+input {
+  beats {
+    port => 5044
+  }
+}
+
+filter {
+  # --- App logs: already structured JSON, just decode ---
+  if "app" in [tags] {
+    json {
+      source => "message"
+      # if a line isn't valid JSON, tag it instead of crashing the pipeline
+      tag_on_failure => ["_app_jsonparsefailure"]
+    }
+  }
+
+  # --- Docker logs: Filebeat's container input already unwrapped the
+  #     Docker envelope, so [message] is the inner app/container line.
+  #     Try to JSON-decode it; plain lines just stay as message text. ---
+  else if "docker" in [tags] {
+    json {
+      source => "message"
+      tag_on_failure => ["_docker_jsonparsefailure"]
+    }
+  }
+
+  # --- System logs: plain-text syslog, needs grok to extract fields ---
+  else if "system" in [tags] {
+    grok {
+      match => { "message" => "%{SYSLOGTIMESTAMP:syslog_timestamp} %{SYSLOGHOST:syslog_host} %{DATA:syslog_program}(?:\[%{POSINT:syslog_pid}\])?: %{GREEDYDATA:syslog_message}" }
+      tag_on_failure => ["_syslogparsefailure"]
+    }
+  }
+}
+
+output {
+  # All logs go to Elasticsearch (unchanged)
+  elasticsearch {
+    hosts => ["http://elasticsearch1:9200"]
+    index => "sherlock-%{[@metadata][beat]}-%{+YYYY.MM.dd}"
+  }
+
+  # Log-pattern alerting: ERROR-level app logs also fire to Discord
+  if [level] == "ERROR" {
+    http {
+      url => "{{ discord_webhook_url }}"
+      http_method => "post"
+      format => "json"
+      content_type => "application/json"
+      mapping => {
+        "content" => "AAAAAAAAAAAAAAAAAAA LOGSTASH LOG ALEEEEEERT: ERROR from %{[path]} (status %{[status]}) — %{[message]}"
+      }
+    }
+  }
+}

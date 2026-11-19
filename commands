@@ -1,0 +1,56 @@
+# PowerShell
+$env:DEVOPS_PASSWORD = "+++"
+vagrant destroy -f
+vagrant up
+
+# WSL - clear known hosts then run Ansible
+ssh-keygen -f '/home/lil_dick/.ssh/known_hosts' -R '192.168.56.10'
+ssh-keygen -f '/home/lil_dick/.ssh/known_hosts' -R '192.168.56.11'
+ssh-keygen -f '/home/lil_dick/.ssh/known_hosts' -R '192.168.56.12'
+ssh-keygen -f '/home/lil_dick/.ssh/known_hosts' -R '192.168.56.13'
+ssh-keygen -f '/home/lil_dick/.ssh/known_hosts' -R '192.168.56.14'
+ssh-keygen -f '/home/lil_dick/.ssh/known_hosts' -R '192.168.56.15'
+ansible-playbook -i inventory/hosts.ini playbook/site.yml -e "ansible_become_password=123abc"
+
+Appserver
+
+docker ps                          # backend running?
+curl http://localhost:3000/metrics # metrics returning JSON?
+sudo ufw status verbose            # ports 22 and 3000 only
+grep devops /etc/passwd            # devops user exists?
+groups devops                      # devops sudo group?
+umask                              # shows 0027?
+
+Webserver 1 n 2
+
+docker ps                          # frontend running?
+sudo ufw status verbose            # ports 22 and 80 only
+
+Loadbalancer
+
+sudo systemctl status nginx        # nginx running?
+cat /etc/nginx/conf.d/default.conf # correct config?
+curl -I http://192.168.56.13       # X-Served-By header alternating?
+curl -I http://192.168.56.13
+curl -I http://192.168.56.13
+curl -I http://192.168.56.13
+
+Backup
+
+crontab -l                         # cron job scheduled?
+ls /opt/backups/                   # backup script exists?
+
+Jenkins
+
+sudo systemctl status jenkins      # jenkins running?
+sudo ufw status verbose            # ports 22 and 8080 only
+
+ssh devops@192.168.56.15
+sudo cat /var/lib/jenkins/secrets/initialAdminPassword
+
+Security
+
+ssh root@192.168.56.10             # should fail
+ssh linus_torvalds@192.168.56.10   # should fail
+
+wsl -d Ubuntu

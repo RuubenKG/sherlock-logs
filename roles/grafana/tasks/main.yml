@@ -1,0 +1,60 @@
+---
+- name: Create Grafana provisioning directories
+  file:
+    path: "{{ item }}"
+    state: directory
+    owner: devops
+    group: devops
+    mode: '0755'
+  loop:
+    - /opt/monitoring/grafana/provisioning/datasources
+    - /opt/monitoring/grafana/provisioning/dashboards
+    - /opt/monitoring/grafana/dashboards
+
+- name: Template Grafana datasource
+  template:
+    src: datasource.yml.j2
+    dest: /opt/monitoring/grafana/provisioning/datasources/datasource.yml
+    owner: devops
+    group: devops
+    mode: '0644'
+  notify: Restart Grafana
+
+- name: Run Grafana container
+  community.docker.docker_container:
+    name: grafana
+    image: grafana/grafana:11.1.0
+    state: started
+    restart_policy: always
+    ports:
+      - "3001:3000"
+    env:
+      GF_SECURITY_ADMIN_PASSWORD: "admin"
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - /opt/monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - /opt/monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+
+- name: Allow Grafana UI port 3001
+  ufw:
+    rule: allow
+    port: '3001'
+    proto: tcp
+
+- name: Template Grafana dashboard provider
+  template:
+    src: dashboard_provider.yml.j2
+    dest: /opt/monitoring/grafana/provisioning/dashboards/dashboard_provider.yml
+    owner: devops
+    group: devops
+    mode: '0644'
+  notify: Restart Grafana
+
+- name: Copy dashboard JSON files
+  copy:
+    src: dashboards/
+    dest: /opt/monitoring/grafana/dashboards/
+    owner: devops
+    group: devops
+    mode: '0644'
+  notify: Restart Grafana

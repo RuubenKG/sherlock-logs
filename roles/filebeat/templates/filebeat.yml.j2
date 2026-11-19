@@ -1,0 +1,43 @@
+filebeat.inputs:
+  # --- System logs: plain-text files under /var/log ---
+  - type: filestream
+    id: system-logs
+    paths:
+      - /var/log/syslog
+      - /var/log/auth.log
+    tags: ["system"]
+
+# --- Docker container logs: all containers on this host ---
+filebeat.autodiscover:
+  providers:
+    - type: docker
+      hints.enabled: true
+      templates:
+        - condition:
+            not:
+              or:
+                - contains:
+                    docker.container.name: "elasticsearch"
+                - contains:
+                    docker.container.name: "logstash"
+                - contains:
+                    docker.container.name: "kibana"
+                - contains:
+                    docker.container.name: "filebeat"
+                - contains:
+                    docker.container.name: "prometheus"
+                - contains:
+                    docker.container.name: "grafana"
+          config:
+            - type: container
+              paths:
+                - /var/lib/docker/containers/${data.docker.container.id}/*.log
+              tags: ["docker"]
+
+# Ship everything to Logstash on the monitoring VM
+output.logstash:
+  hosts: ["192.168.56.16:5044"]
+
+# don't also try to talk to Elasticsearch directly
+setup.ilm.enabled: false
+setup.template.enabled: false

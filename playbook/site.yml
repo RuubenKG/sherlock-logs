@@ -1,0 +1,109 @@
+---
+- name: Update all VMs
+  hosts: all
+  become: true
+
+  tasks:
+  - name: Update apt package cache
+    apt:
+      update_cache: yes
+      cache_valid_time: 3600
+
+  - name: Upgrade all packages
+    apt:
+      upgrade: dist
+
+- name: Apply common configartion to all VMs
+  hosts: all
+  become: true
+  roles:
+    - role: ../roles/common
+
+- name: Configure appserver
+  hosts: appserver
+  become: true
+  roles:
+    - role: ../roles/appserver
+
+- name: Configure webservers
+  hosts: webservers
+  become: true
+  roles:
+    - role: ../roles/webserver
+
+- name: Configure loadbalancer
+  hosts: loadbalancer
+  become: true
+  roles:
+    - role: ../roles/loadbalancer
+
+- name: Install Docker all VMS
+  hosts: all
+  become: true
+  roles:
+    - role: ../roles/docker
+
+- name: Deploy backend to appserver
+  hosts: appserver
+  become: true
+  roles:
+    - role: ../roles/deploy_backend
+
+- name: Deploy frontend to webservers
+  hosts: webservers
+  become: true
+  roles:
+    - role: ../roles/deploy_frontend
+
+- name: Configure loadbalancer nginx
+  hosts: loadbalancer
+  become: true
+  roles:
+    - role: ../roles/configure_loadbalancer
+
+- name: Configure backup VM
+  hosts: backup
+  become: true
+  roles:
+    - role: ../roles/backup
+
+- name: Add backup SSH key to all other VMs
+  hosts: appserver, webservers, loadbalancer
+  become: true
+  tasks:
+    - name: Get backup public key
+      slurp:
+        src: /home/devops/.ssh/id_ed25519.pub
+      delegate_to: 192.168.56.14
+      register: backup_key
+
+    - name: Add backup key to authorized_keys
+      authorized_key:
+        user: devops
+        key: "{{ backup_key.content | b64decode }}"
+        state: present
+        
+- name: Configure Jenkins VM
+  hosts: jenkins
+  become: true
+  roles:
+    - role: ../roles/common
+    - role: ../roles/jenkins
+
+- name: Add Jenkins SSH key to deployment targets
+  hosts: appserver, webservers
+  become: true
+  tasks:
+    - name: Get Jenkins public key
+      slurp:
+        src: /var/lib/jenkins/.ssh/id_ed25519.pub
+      delegate_to: 192.168.56.15
+      register: jenkins_key
+
+    - name: Add Jenkins key to authorized_keys
+      authorized_key:
+        user: devops
+        key: "{{ jenkins_key.content | b64decode }}"
+        state: present
+
+- import_playbook: monitoring.yml

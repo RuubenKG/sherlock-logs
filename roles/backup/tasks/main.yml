@@ -1,0 +1,54 @@
+---
+- name: Create backup directory
+  file:
+    path: /opt/backups
+    state: directory
+    owner: devops
+    group: devops
+    mode: '0755'
+
+- name: Generate SSH key for backup VM
+  openssh_keypair:
+    path: /home/devops/.ssh/id_ed25519
+    type: ed25519
+    owner: devops
+    group: devops
+    force: no
+
+- name: Read backup public key
+  slurp:
+    src: /home/devops/.ssh/id_ed25519.pub
+  register: backup_public_key
+
+- name: Create backup script
+  copy:
+    dest: /opt/backups/backup.sh
+    owner: devops
+    group: devops
+    mode: '0755'
+    content: |
+      #!/bin/bash
+      TIMESTAMP=$(date +%Y-%m-%d_%H-%M-%S)
+      BACKUP_DIR="/opt/backups/$TIMESTAMP"
+      mkdir -p "$BACKUP_DIR"
+
+      for HOST in 192.168.56.10 192.168.56.11 192.168.56.12 192.168.56.13; do
+        case $HOST in
+          192.168.56.10) NAME="appserver" ;;
+          192.168.56.11) NAME="webserver1" ;;
+          192.168.56.12) NAME="webserver2" ;;
+          192.168.56.13) NAME="loadbalancer" ;;
+        esac
+        mkdir -p "$BACKUP_DIR/$NAME"
+        rsync -avz -e "ssh -o StrictHostKeyChecking=no" devops@$HOST:/home/devops/ "$BACKUP_DIR/$NAME/home/"
+        rsync -avz -e "ssh -o StrictHostKeyChecking=no" devops@$HOST:/etc/ "$BACKUP_DIR/$NAME/etc/"
+      done
+
+- name: Set up cron job for weekly backups
+  cron:
+    name: "Weekly backup"
+    minute: "0"
+    hour: "2"
+    weekday: "0"
+    job: "/opt/backups/backup.sh"
+    user: devops

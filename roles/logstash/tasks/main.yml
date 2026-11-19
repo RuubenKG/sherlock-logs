@@ -1,0 +1,40 @@
+---
+- name: Create Logstash config directory
+  file:
+    path: /opt/monitoring/logstash
+    state: directory
+    owner: devops
+    group: devops
+    mode: '0755'
+
+- name: Template Logstash pipeline config
+  template:
+    src: logstash.conf.j2
+    dest: /opt/monitoring/logstash/logstash.conf
+    owner: devops
+    group: devops
+    mode: '0644'
+  notify: Restart Logstash
+
+- name: Run Logstash container
+  community.docker.docker_container:
+    name: logstash
+    image: docker.elastic.co/logstash/logstash:8.14.1
+    state: started
+    restart_policy: unless-stopped
+    networks:
+      - name: elk
+    env:
+      LS_JAVA_OPTS: "-Xms512m -Xmx512m"
+      XPACK_MONITORING_ENABLED: "false"
+    volumes:
+      - /opt/monitoring/logstash/logstash.conf:/usr/share/logstash/pipeline/logstash.conf:ro
+    ports:
+      - "5044:5044"
+
+- name: Allow Logstash beats input port 5044 from monitoring subnet
+  ufw:
+    rule: allow
+    from_ip: 192.168.56.0/24
+    port: '5044'
+    proto: tcp

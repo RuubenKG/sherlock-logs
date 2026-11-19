@@ -1,0 +1,66 @@
+groups:
+  - name: infrastructure_alerts
+    rules:
+
+      - alert: HighCpuUsage
+        expr: 100 - (avg by (instance) (rate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU on {{ $labels.instance }}"
+          description: "CPU above 80% for 5 minutes (current: {{ $value | printf \"%.1f\" }}%)"
+
+      - alert: HighMemoryUsage
+        expr: 100 * (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) > 90
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory on {{ $labels.instance }}"
+          description: "Memory above 90% for 5 minutes"
+
+      - alert: LowDiskSpace
+        expr: (node_filesystem_avail_bytes{mountpoint="/"} / node_filesystem_size_bytes{mountpoint="/"}) * 100 < 20
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low disk space on {{ $labels.instance }}"
+          description: "Less than 20% disk remaining"
+
+      - alert: VmUnreachable
+        expr: up{job="node_exporter"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "VM unreachable: {{ $labels.instance }}"
+          description: "Node Exporter target has been down for 1 minute"
+
+      - alert: ContainerRestartingRepeatedly
+        expr: changes(container_start_time_seconds{name!=""}[15m]) > 3
+        for: 1m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Container {{ $labels.name }} restarting repeatedly"
+          description: "More than 3 restarts in 15 minutes"
+
+      - alert: ContainerMemoryHigh
+        expr: (container_memory_usage_bytes{name!=""} / container_spec_memory_limit_bytes{name!=""}) * 100 > 80 and container_spec_memory_limit_bytes{name!=""} > 0
+        for: 2m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Container {{ $labels.name }} near memory limit"
+          description: "Using over 80% of its memory limit"
+
+      - alert: ElasticsearchClusterUnhealthy
+        expr: elasticsearch_cluster_health_status{color="green"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Elasticsearch cluster not green"
+          description: "Cluster health has left the green state"

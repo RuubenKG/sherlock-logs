@@ -1,0 +1,4 @@
+.vagrant/
+*.log
+inventory/group_vars/monitoring.yml
+inventory/group_vars/monitoring/main.yml

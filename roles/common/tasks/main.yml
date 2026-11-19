@@ -1,0 +1,71 @@
+---
+- name: Set umask in /etc/profile
+  lineinfile:
+    path: /etc/profile
+    line: 'umask 027'
+    state: present
+
+- name: Disable password authentication
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^PasswordAuthentication'
+    line: 'PasswordAuthentication no'
+    state: present
+  notify: Restart SSH
+
+- name: Disable root login
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?PermitRootLogin no'
+    line: 'PermitRootLogin no'
+    state: present
+  notify: Restart SSH
+
+- name: Set AllowUsers in sshd_config
+  lineinfile:
+    path: /etc/ssh/sshd_config
+    regexp: '^#?AllowUsers'
+    line: 'AllowUsers devops vagrant'
+    state: present
+  notify: Restart SSH
+
+- name: Enable UFW
+  ufw:
+    state: enabled
+    policy: deny
+
+- name: Allow SSH on all VMs
+  ufw:
+    rule: allow
+    port: '22'
+    proto: tcp
+
+- name: Enable unattend upgrades
+  apt:
+    name: unattended-upgrades
+    state: present
+
+- name: Install Fail2Ban
+  apt:
+    name: fail2ban
+    state: present
+
+- name: Enable Fail2Ban
+  service:
+    name: fail2ban
+    state: started
+    enabled: yes
+
+- name: Configure /etc/hosts
+  lineinfile:
+    path: /etc/hosts
+    line: "{{ item }}"
+    state: present
+  loop:
+    - "192.168.56.10 APPSERVER"
+    - "192.168.56.11 WEBSERVER-1"
+    - "192.168.56.12 WEBSERVER-2"
+    - "192.168.56.13 LOADBALANCER"
+    - "192.168.56.14 BACKUP"
+    - "192.168.56.15 JENKINS"
+    - "192.168.56.16 MONITORING"
